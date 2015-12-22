@@ -5,7 +5,7 @@
 // @exclude      https://services.planningcenteronline.com/people/*
 // @author       Montana Selman
 // @description  Enhancements to PCO Services
-// @version      0.1
+// @version      0.2
 // @require      http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require      https://greasyfork.org/scripts/1003-wait-for-key-elements/code/Wait%20for%20key%20elements.js?version=49342
 // @grant        GM_addStyle

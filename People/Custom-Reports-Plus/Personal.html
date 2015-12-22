@@ -1,0 +1,205 @@
+<html>
+  <head>
+
+    <title>PCO People - {{ list.name }} Report</title>
+    {{ helpers.bootstrap_3 }}
+		<link rel="stylesheet" href="https://bootswatch.com/paper/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+    <style> @page{margin: 0.5in; size: US-Letter, landscape;}@media print{ div#selection{display:none;} a{text-decoration:none;color:black;} }body{font-size:12px;}img#logo{float:right;width:auto;height:1in;}tr{font-size:14px;}h2{float:left; font-size:2.3em;text-transform:uppercase;font-weight:bold;display:block; text-align:center;}h3{font-size:1.1em;float:left; display:block; margin:0.25in auto;}.blurred{filter: blur(5px); -webkit-filter: blur(5px); -moz-filter: blur(5px); -o-filter: blur(5px); -ms-filter: blur(5px);} </style>
+
+  </head>
+  <body>
+
+    <!--  JQuery turns the following div into a dialog and is used for selecting one's printing prefrences.
+    After the dialog is closed, JQuery sets its display to 'none' via CSS (which prevents the dialog from
+    being visible at print) and un-blurs the report -->
+    <div id="selection">
+        <input type="checkbox" id="checkEmail">Email</input>
+        <input type="checkbox" id="checkAddr">Address</input>
+        <input type="checkbox" id="checkPhone">Phone</input><br/>
+				<input type="checkbox" id="checkAge">Age</input>
+				<input type="checkbox" id="checkBD">Birthday</input>
+    </div>
+
+    <!-- This div contains all the content of the page (which is only a single table)
+    in order to blur it while the above dialog is open. After the dialog is closed,
+    the 'blurred' class is removed -->
+    <div id="mainContent" class="blurred">
+
+        <h2>{{ list.name }}</h2>
+        <!-- IMPORTANT: You will either need to change the image source below to your organization's logo,
+        or remove the tag altogether. Removing this image will not ruin the report. If you want to place
+        your logo here, you need to host your logo online somewhere. Use a free image host like flickr or
+        some alternative. -->
+
+        <!-- YOUR CHURCH LOGO <img id="logo" src="IMAGE SOURCE HERE" /> -->
+        
+        <br/><br/><br/>
+        <!-- This p tag contains the report's subheading. It provides the 'Printed On' date and the 'List Last Upwdated' date. The beginning of Liquid Markup -->
+        <p>
+            <B>PRINTED</B> on {{ 'now' | date:"%D"}} at {{ 'now' | date:"%I" }}:{{ 'now' | date:"%M" }} {{ 'now' | date:"%p" }} //
+            <B>PEOPLE LIST LAST UPDATED</B> on {{ list.updated_at | date: "%D" }} at {{ list.updated_at | date:"%I" }}:{{ list.updated_at | date:"%M" }} {{ list.updated_at | date:"%p" }}
+        </p>
+        <!-- Below is juicy part of the report. Every person will be plopped right in this little (or big) table -->
+        <table class="table table-striped table-condensed" id="reportList">
+            <thead style="text-transform:uppercase;">
+                <tr>
+                  <!-- NOTE: The classes below are not used for styling of any sory (yet). Their primary
+                  function is to be used for javascript/jQuery selection. This the same case with the classes
+                  in the table body -->
+                    <th class="listName">Name</th>
+                    <th class="listEmail">Email</th>
+                    <th class="listAddr">Address</th>
+                    <th class="listPhone">Phone</th>
+                  	<th class="listAge">Age</th>
+										<th class="listBD">Birthday</th>
+                </tr>
+            </thead>
+
+            <!--
+            METHODOLOGY:
+              Here is what is happening below. The for loop takes the amount of people in the list in question
+              and spits out a table row <tr> per person. Then a table column <td> is created for every
+              aspect of information about each person. Each columns has an if statement to check for empty
+              information. If there is information, it is outputted. If there is now, a blank space is left.
+           -->
+
+            <tbody>
+                {% for person in people %}
+                <tr>
+                  	<td class="listName"> <a href="https://people.planningcenteronline.com/people/{{ person.id }}" target="_blank">{{ person.name }}</a></td>
+                    <td class="listEmail">
+                      {% if person.emails != empty %}
+                      	{% for email in person.emails %}
+                      		<a href="mailto:{{ email.address }}" target="_top">{{ email.address }}</a>
+                      	{% endfor %}
+                      {% endif %}
+                    </td>
+                    <td class="listAddr">
+                      {% if person.addresses != empty %}
+                      	{% for address in person.addresses %}
+                      		{% if address.city == 'Amarillo' %}
+                      			<a href="http://maps.google.com/?q={{ address.postal_address | url_escape | strip_html }}"  target="_blank"> {{ address.street }} </a>
+                      		{% else %}
+                      			<a href="http://maps.google.com/?q={{ address.postal_address | url_escape | strip_html }}" target="_blank">  {{ address.postal_address }} </a>
+                      		{% endif%}
+                      	{% endfor%}
+                      {% endif %}
+                    </td>
+                    <td class="listPhone">
+                      {% if person.phone_numbers != empty %}
+                      	{% for phone_number in person.phone_numbers %}
+                      		{% if phone_number.location != 'Pager' %}
+                      			<a href="tel:{{ phone_number.number }}">
+                              {% if phone_number.location == "Home" %}<b>H:</b> {{ phone_number.number }}
+                              {% elsif phone_number.location == "Mobile" %}<b>M:</b> {{ phone_number.number }}
+                              {% endif %} </a>
+                      		{% endif %}
+                      	{% endfor%}
+                      {% endif %}
+                    </td>
+                  	<td class="listAge">
+                      	{{ person.age }}
+                  	</td>
+										<td class="listBD">
+                      	{{ person.birthdate | date:"%D"}}
+                  	</td>
+              </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+    <!-- These two script references pull in jQuery and jQueryUI. Both are essential for the edittablilty of the
+    form and the UI of the User Printing Preferences -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    <script>
+
+      /*
+      METHODOLOGY:
+        This function takes the Preferences provided by the user and adjusts the table accordingly.
+        An if statement is made for each aspect of a person and checks if the user left the box
+        checked or not. If the box was unchecked, then the corresponding table header and columns
+        are removed from the document. If the user unchecks all the boxes, a worning is presented
+        and the page reloads.
+      */
+      function setPrefs(email, addr, phone, age, bd) {
+          $('div#selection').css({
+              "display": "none"
+          });
+          if (email == false) {
+              $('#reportList thead tr .listEmail').remove();
+              $('#reportList tbody tr .listEmail').each(function() {
+                  $(this).remove();
+              });
+          }
+          if (addr == false) {
+              $('#reportList thead tr .listAddr').remove();
+              $('#reportList tbody tr .listAddr').each(function() {
+                  $(this).remove();
+              });
+          }
+          if (phone == false) {
+              $('#reportList thead tr .listPhone').remove();
+              $('#reportList tbody tr .listPhone').each(function() {
+                  $(this).remove();
+              });
+          }
+        	if (age == false) {
+        	      $('#reportList thead tr .listAge').remove();
+        	      $('#reportList tbody tr .listAge').each(function() {
+        	          $(this).remove();
+        	      });
+        	  }
+        	if (bd == false) {
+        	      $('#reportList thead tr .listBD').remove();
+        	      $('#reportList tbody tr .listBD').each(function() {
+        	          $(this).remove();
+        	      });
+        	  }
+      }
+
+      /*
+        METHODOLOGY:
+          The below function runs once the page loads. It sets the dialog checkboxes to checked
+          by default, and creates a Generate button. One the user has finished checking and
+          unchecking, the generate button will close the dialog, pass the checked value
+          of each checkbox to the setPrefs function, and start the setPrefs function.
+      */
+      $(function() {
+          document.getElementById("checkEmail").checked = true;
+          document.getElementById("checkAddr").checked = true;
+          document.getElementById("checkPhone").checked = true;
+          document.getElementById("checkAge").checked = true;
+          document.getElementById("checkBD").checked = true;
+          $('#selection').dialog({
+              title: "Printing Preferences",
+              position: {
+                  my: "center top",
+                  at: "center",
+                  of: $('table#reportList thead')
+              },
+              buttons: [{
+                  text: 'Generate',
+                  click: function() {
+                      var email = document.getElementById("checkEmail").checked,
+                          addr = document.getElementById("checkAddr").checked,
+                          phone = document.getElementById("checkPhone").checked,
+                     			age = document.getElementById("checkAge").checked,
+                          bd = document.getElementById("checkBD").checked;
+                          setPrefs(email, addr, phone, age, bd);
+                          $(this).dialog('close');
+                  }
+              }],
+              "close": function() {
+                  $('div#mainContent').removeClass('blurred');
+              }
+          });
+      });
+
+    </script>
+
+  </body>
+</html>
